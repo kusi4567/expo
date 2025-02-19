@@ -4,12 +4,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.moveAsync = exports.ensureDirectoryAsync = exports.directoryExistsAsync = void 0;
-const fs_extra_1 = __importDefault(require("fs-extra"));
+const fs_1 = __importDefault(require("fs"));
 async function directoryExistsAsync(file) {
-    return (await fs_extra_1.default.promises.stat(file).catch(() => null))?.isDirectory() ?? false;
+    return (await fs_1.default.promises.stat(file).catch(() => null))?.isDirectory() ?? false;
 }
 exports.directoryExistsAsync = directoryExistsAsync;
-const ensureDirectoryAsync = (path) => fs_extra_1.default.promises.mkdir(path, { recursive: true });
+async function ensureDirectoryAsync(path) {
+    await fs_1.default.promises.mkdir(path, { recursive: true });
+}
 exports.ensureDirectoryAsync = ensureDirectoryAsync;
-exports.moveAsync = fs_extra_1.default.move;
+async function moveAsync(src, dest) {
+    await fs_1.default.promises.rename(src, dest);
+}
+exports.moveAsync = moveAsync;
 //# sourceMappingURL=dir.js.map
