@@ -18,9 +18,9 @@ function _debug() {
   };
   return data;
 }
-function _fsExtra() {
-  const data = _interopRequireDefault(require("fs-extra"));
-  _fsExtra = function () {
+function _fs() {
+  const data = _interopRequireDefault(require("fs"));
+  _fs = function () {
     return data;
   };
   return data;
@@ -69,7 +69,9 @@ async function configureColorAssets({
   const colorsetPath = _path().default.resolve(iosNamedProjectRoot, SPLASHSCREEN_COLORSET_PATH);
 
   // ensure old SplashScreen colorSet is removed
-  await _fsExtra().default.remove(colorsetPath);
+  await _fs().default.promises.rm(colorsetPath, {
+    force: true
+  });
   await writeColorsContentsJsonFileAsync({
     assetPath: colorsetPath,
     backgroundColor,
@@ -122,14 +124,18 @@ async function writeColorsContentsJsonFileAsync({
 async function writeContentsJsonAsync(directory, {
   colors
 }) {
-  await _fsExtra().default.ensureDir(directory);
-  await _fsExtra().default.writeFile((0, _path().join)(directory, 'Contents.json'), JSON.stringify({
+  if (!_fs().default.existsSync(directory)) {
+    await _fs().default.promises.mkdir(directory, {
+      recursive: true
+    });
+  }
+  await _fs().default.promises.writeFile((0, _path().join)(directory, 'Contents.json'), JSON.stringify({
     colors,
     info: {
       version: 1,
       // common practice is for the tool that generated the icons to be the "author"
       author: 'expo'
     }
-  }, null, 2));
+  }, null, 2), 'utf8');
 }
 //# sourceMappingURL=withIosSplashColors.js.map
