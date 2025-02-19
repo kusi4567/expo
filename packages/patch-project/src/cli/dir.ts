@@ -1,9 +1,13 @@
-import fs from 'fs-extra';
+import fs from 'fs';
 
 export async function directoryExistsAsync(file: string): Promise<boolean> {
   return (await fs.promises.stat(file).catch(() => null))?.isDirectory() ?? false;
 }
 
-export const ensureDirectoryAsync = (path: string) => fs.promises.mkdir(path, { recursive: true });
+export async function ensureDirectoryAsync(path: string): Promise<void> {
+  await fs.promises.mkdir(path, { recursive: true });
+}
 
-export const moveAsync = fs.move;
+export async function moveAsync(src: string, dest: string): Promise<void> {
+  await fs.promises.rename(src, dest);
+}
