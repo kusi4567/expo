@@ -84,7 +84,19 @@ function createCommand(packageManager, exampleProjectSlug, template) {
  */
 async function moveFiles(fromPath, toPath) {
     for (const file of await fs_1.default.promises.readdir(fromPath)) {
-        await fs_1.default.promises.rename(path_1.default.join(fromPath, file), path_1.default.join(toPath, file));
+        try {
+            await fs_1.default.promises.rename(path_1.default.join(fromPath, file), path_1.default.join(toPath, file));
+        }
+        catch (error) {
+            // NOTE(@kitten): Unsure if this can happen across file systems, so it's better to handle that case
+            if (error.code === 'EXDEV') {
+                await fs_1.default.promises.cp(fromPath, toPath, { errorOnExist: true, recursive: true });
+                await fs_1.default.promises.rm(fromPath, { recursive: true, force: true });
+            }
+            else {
+                throw error;
+            }
+        }
     }
 }
 /**

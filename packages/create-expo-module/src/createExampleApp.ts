@@ -107,7 +107,17 @@ function createCommand(
  */
 async function moveFiles(fromPath: string, toPath: string): Promise<void> {
   for (const file of await fs.promises.readdir(fromPath)) {
-    await fs.promises.rename(path.join(fromPath, file), path.join(toPath, file));
+    try {
+      await fs.promises.rename(path.join(fromPath, file), path.join(toPath, file));
+    } catch (error: any) {
+      // NOTE(@kitten): Unsure if this can happen across file systems, so it's better to handle that case
+      if (error.code === 'EXDEV') {
+        await fs.promises.cp(fromPath, toPath, { errorOnExist: true, recursive: true });
+        await fs.promises.rm(fromPath, { recursive: true, force: true });
+      } else {
+        throw error;
+      }
+    }
   }
 }
 
