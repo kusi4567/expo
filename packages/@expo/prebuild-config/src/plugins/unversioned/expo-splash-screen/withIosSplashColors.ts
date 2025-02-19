@@ -1,6 +1,6 @@
 import { ConfigPlugin, IOSConfig, withDangerousMod } from '@expo/config-plugins';
 import Debug from 'debug';
-import fs from 'fs-extra';
+import fs from 'fs';
 // @ts-ignore
 import path, { join } from 'path';
 
@@ -43,7 +43,7 @@ async function configureColorAssets({
   const colorsetPath = path.resolve(iosNamedProjectRoot, SPLASHSCREEN_COLORSET_PATH);
 
   // ensure old SplashScreen colorSet is removed
-  await fs.remove(colorsetPath);
+  await fs.promises.rm(colorsetPath, { force: true });
 
   await writeColorsContentsJsonFileAsync({
     assetPath: colorsetPath,
@@ -108,9 +108,11 @@ async function writeContentsJsonAsync(
   directory: string,
   { colors }: { colors: ContentsJsonColor[] }
 ): Promise<void> {
-  await fs.ensureDir(directory);
+  if (!fs.existsSync(directory)) {
+    await fs.promises.mkdir(directory, { recursive: true });
+  }
 
-  await fs.writeFile(
+  await fs.promises.writeFile(
     join(directory, 'Contents.json'),
     JSON.stringify(
       {
@@ -123,6 +125,7 @@ async function writeContentsJsonAsync(
       },
       null,
       2
-    )
+    ),
+    'utf8'
   );
 }
