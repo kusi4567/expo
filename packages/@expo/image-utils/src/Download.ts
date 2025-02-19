@@ -60,7 +60,8 @@ export async function downloadImage(url: string): Promise<string> {
     if (!fs.existsSync(parentPath)) {
       await fs.promises.mkdir(parentPath, { recursive: true });
     }
-    fs.promises.rename(localPath, newPath);
+    // NOTE: EXDEV can't happen since we're just renaming the file in the same directory
+    await fs.promises.rename(localPath, newPath);
     return newPath;
   }
 
