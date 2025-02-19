@@ -1,5 +1,5 @@
 import spawnAsync from '@expo/spawn-async';
-import fs from 'fs-extra';
+import fs from 'fs';
 import getenv from 'getenv';
 import os from 'os';
 import path from 'path';
@@ -32,7 +32,7 @@ export async function createExampleApp(
   // Path to the target example dir
   const appTargetPath = path.join(targetDir, 'example');
 
-  if (!(await fs.pathExists(appTargetPath))) {
+  if (!fs.existsSync(appTargetPath)) {
     // The template doesn't include the example app, so just skip this phase
     return;
   }
@@ -61,14 +61,14 @@ export async function createExampleApp(
     await moveFiles(appTargetPath, appTmpPath);
 
     // Cleanup the "example" dir
-    await fs.rmdir(appTargetPath);
+    await fs.promises.rm(appTargetPath, { recursive: true, force: true });
 
     // Clean up the ".git" from example app
     // note, this directory has contents, rmdir will throw
-    await fs.remove(path.join(appTmpPath, '.git'));
+    await fs.promises.rm(path.join(appTmpPath, '.git'), { recursive: true, force: true });
 
     // Move the temporary example app to "example" dir
-    await fs.rename(appTmpPath, appTargetPath);
+    await fs.promises.rename(appTmpPath, appTargetPath);
 
     await addMissingAppConfigFields(appTargetPath, data);
 
@@ -106,10 +106,8 @@ function createCommand(
  * Copies files from one directory to another.
  */
 async function moveFiles(fromPath: string, toPath: string): Promise<void> {
-  for (const file of await fs.readdir(fromPath)) {
-    await fs.move(path.join(fromPath, file), path.join(toPath, file), {
-      overwrite: true,
-    });
+  for (const file of await fs.promises.readdir(fromPath)) {
+    await fs.promises.rename(path.join(fromPath, file), path.join(toPath, file));
   }
 }
 
@@ -118,7 +116,8 @@ async function moveFiles(fromPath: string, toPath: string): Promise<void> {
  */
 async function addMissingAppConfigFields(appPath: string, data: SubstitutionData): Promise<void> {
   const appConfigPath = path.join(appPath, 'app.json');
-  const appConfig = await fs.readJson(appConfigPath);
+  const appConfigContent = await fs.promises.readFile(appConfigPath, 'utf8');
+  const appConfig = JSON.parse(appConfigContent);
   const appId = `${data.project.package}.example`;
 
   // Android package name needs to be added to app.json
@@ -133,9 +132,7 @@ async function addMissingAppConfigFields(appPath: string, data: SubstitutionData
   }
   appConfig.expo.ios.bundleIdentifier = appId;
 
-  await fs.writeJson(appConfigPath, appConfig, {
-    spaces: 2,
-  });
+  await fs.promises.writeFile(appConfigPath, JSON.stringify(appConfig, null, 2), 'utf8');
 }
 
 /**
@@ -144,7 +141,8 @@ async function addMissingAppConfigFields(appPath: string, data: SubstitutionData
  */
 async function modifyPackageJson(appPath: string): Promise<void> {
   const packageJsonPath = path.join(appPath, 'package.json');
-  const packageJson = await fs.readJson(packageJsonPath);
+  const packageJsonContent = await fs.promises.readFile(packageJsonPath, 'utf8');
+  const packageJson = JSON.parse(packageJsonContent);
 
   if (!packageJson.expo) {
     packageJson.expo = {};
@@ -161,9 +159,7 @@ async function modifyPackageJson(appPath: string): Promise<void> {
     delete packageJson.dependencies[dependencyToRemove];
   }
 
-  await fs.writeJson(packageJsonPath, packageJson, {
-    spaces: 2,
-  });
+  await fs.promises.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
 }
 
 /**
