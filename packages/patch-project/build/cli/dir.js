@@ -14,7 +14,19 @@ async function ensureDirectoryAsync(path) {
 }
 exports.ensureDirectoryAsync = ensureDirectoryAsync;
 async function moveAsync(src, dest) {
-    await fs_1.default.promises.rename(src, dest);
+    try {
+        await fs_1.default.promises.rename(src, dest);
+    }
+    catch (error) {
+        // NOTE(@kitten): Unsure if this can happen across file systems, so it's better to handle that case
+        if (error.code === 'EXDEV') {
+            await fs_1.default.promises.cp(src, dest, { errorOnExist: true, recursive: true });
+            await fs_1.default.promises.rm(src, { recursive: true, force: true });
+        }
+        else {
+            throw error;
+        }
+    }
 }
 exports.moveAsync = moveAsync;
 //# sourceMappingURL=dir.js.map
